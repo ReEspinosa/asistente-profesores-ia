@@ -29,4 +29,6 @@ http://localhost:8000/docs
 
 ## 👤 Autor
 
-Rebeca - UNAM Ciencias de la Computación
+Rebeca Espinosa Roque - UNAM Ciencias de la Computación
+Julio Islas Espino - UNAM Ciencias de la Computación
+Carlos Yañez - UNAM Ciencias de la Computación
