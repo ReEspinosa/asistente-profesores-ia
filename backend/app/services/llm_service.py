@@ -3,7 +3,6 @@ import base64
 import httpx
 import os
 from dotenv import load_dotenv
-from typing import List, Dict, Optional
 
 load_dotenv()
 
@@ -15,7 +14,7 @@ class LLMService:
         self.model = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
         
         if not self.user or not self.password:
-            raise ValueError("Credenciales no configuradas en .env")
+            raise ValueError("Credenciales no configuradas")
         
         credentials = f"{self.user}:{self.password}"
         self.encoded_credentials = base64.b64encode(credentials.encode()).decode()
@@ -29,12 +28,11 @@ class LLMService:
         )
         print("Servicio LLM inicializado")
     
-    def generate(self, prompt, system_prompt="Eres un asistente educativo", temperature=0.7, max_tokens=None):
+    def generate(self, prompt, system_prompt="Eres un asistente educativo", temperature=0.7, max_tokens=500):  # ← Reducido a 500
         try:
             messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}]
-            kwargs = {"model": self.model, "messages": messages, "temperature": temperature}
-            if max_tokens:
-                kwargs["max_tokens"] = max_tokens
+            kwargs = {"model": self.model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
+            
             completion = self.client.chat.completions.create(**kwargs)
             return completion.choices[0].message.content
         except Exception as e:
