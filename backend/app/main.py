@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import generation
 import os
 from dotenv import load_dotenv
+from app.api.routes import chat_casual
 
 load_dotenv()
 
@@ -21,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(generation.router, prefix="/api", tags=["generation"])
+app.include_router(chat_casual.router)
 
 @app.get("/")
 def root():
