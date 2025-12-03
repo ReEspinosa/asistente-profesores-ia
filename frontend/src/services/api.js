@@ -18,3 +18,7 @@ export const enviarMensajeCasual = async (mensaje, historial = []) => {
 export const obtenerBienvenida = async () => {
     return API.get('/chat-casual/bienvenida');
 };
+
+export const generarDiapositivas = async (data) => {
+    return API.post('/generar-diapositivas', data);
+};
