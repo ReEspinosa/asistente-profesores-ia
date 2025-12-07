@@ -8,7 +8,7 @@ function Diapositivas() {
     const [tema, setTema] = useState('');
     const [numDiapositivas, setNumDiapositivas] = useState(8);
     const [loading, setLoading] = useState(false);
-    const [pdfUrl, setPdfUrl] = useState('');
+    const [resultado, setResultado] = useState(null);
 
     const templates = [
         {
@@ -46,7 +46,6 @@ function Diapositivas() {
         }
 
         setLoading(true);
-        setPdfUrl('');
 
         try {
             const response = await generarDiapositivas({
@@ -55,8 +54,22 @@ function Diapositivas() {
                 num_diapositivas: numDiapositivas
             });
 
-            console.log('Response:', response);
-            alert('Presentacion generada exitosamente');
+            // Crear un blob del archivo
+            const blob = new Blob([response.data], {
+                type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+            });
+
+            // Crear URL y descargar
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `presentacion_${tema.replace(/ /g, '_')}.pptx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            alert('Presentacion descargada exitosamente');
         } catch (error) {
             console.error('Error:', error);
             alert('Error al generar la presentacion');
@@ -142,7 +155,7 @@ function Diapositivas() {
                     <div className="lg:col-span-2">
                         <h2 className="text-2xl font-bold text-brand-blue mb-6">Selecciona una Plantilla</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             {templates.map((template) => (
                                 <button
                                     key={template.id}
@@ -168,6 +181,59 @@ function Diapositivas() {
                                 </button>
                             ))}
                         </div>
+
+                        {resultado && (
+                            <div className="bg-white rounded-2xl p-6 shadow-lg">
+                                <h3 className="text-2xl font-bold text-brand-blue mb-4">
+                                    {resultado.contenido.titulo_presentacion}
+                                </h3>
+
+                                <div className="space-y-6">
+                                    {resultado.contenido.diapositivas.map((slide) => (
+                                        <div key={slide.numero} className="border-2 border-gray-200 rounded-lg p-4">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <span className="bg-brand-blue text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                                                    {slide.numero}
+                                                </span>
+                                                <h4 className="text-lg font-bold text-gray-800">
+                                                    {slide.titulo}
+                                                </h4>
+                                            </div>
+                                            <ul className="list-disc list-inside space-y-2 ml-11">
+                                                {slide.contenido.map((punto, idx) => (
+                                                    <li key={idx} className="text-gray-700">
+                                                        {punto}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-6 flex gap-4">
+                                    <button
+                                        onClick={() => setResultado(null)}
+                                        className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                                    >
+                                        Nueva presentacion
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const texto = JSON.stringify(resultado.contenido, null, 2);
+                                            const blob = new Blob([texto], { type: 'text/plain' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = 'presentacion.json';
+                                            a.click();
+                                        }}
+                                        className="flex-1 bg-brand-blue text-white py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-colors"
+                                    >
+                                        Descargar contenido
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>

@@ -20,5 +20,7 @@ export const obtenerBienvenida = async () => {
 };
 
 export const generarDiapositivas = async (data) => {
-    return API.post('/generar-diapositivas', data);
+    return API.post('/generar-diapositivas', data, {
+        responseType: 'blob'
+    });
 };

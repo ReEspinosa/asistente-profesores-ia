@@ -18,7 +18,7 @@ class LLMService:
         
         credentials = f"{self.user}:{self.password}"
         self.encoded_credentials = base64.b64encode(credentials.encode()).decode()
-        http_client = httpx.Client(verify=False)
+        http_client = httpx.Client(verify=False, timeout=120.0)
         
         self.client = openai.OpenAI(
             base_url=self.base_url,

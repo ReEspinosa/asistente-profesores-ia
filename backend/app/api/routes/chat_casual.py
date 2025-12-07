@@ -1,49 +1,74 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict, Optional
-from app.services.chat_casual_service import ChatCasualService
+import openai
+import base64
+import httpx
+import os
+from typing import List, Dict
 
-router = APIRouter(prefix="/api/chat-casual", tags=["Chat Casual"])
+router = APIRouter()
 
-class MensajeChatCasual(BaseModel):
-    role: str  # "user" o "assistant"
-    content: str
-
-class ChatCasualRequest(BaseModel):
+class MensajeRequest(BaseModel):
     mensaje: str
-    historial: Optional[List[MensajeChatCasual]] = []
+    historial: List[Dict[str, str]] = []
 
-class ChatCasualResponse(BaseModel):
-    respuesta: str
-    success: bool = True
+def get_openai_client():
+    USER = os.getenv("LLM_USER", "rag_user").strip("'")
+    PASSWORD = os.getenv("LLM_PASSWORD", "").strip("'")
+    BASE_URL = os.getenv("OPENAI_BASE_URL")
 
-@router.post("/mensaje", response_model=ChatCasualResponse)
-async def enviar_mensaje_casual(request: ChatCasualRequest):
-    """
-    Endpoint para chat casual con Cuali.
-    Sin prompts especializados, solo conversación amigable.
-    """
+    credentials = f"{USER}:{PASSWORD}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+
+    http_client = httpx.Client(verify=False, timeout=60.0)
+
+    client = openai.OpenAI(
+        base_url=BASE_URL,
+        api_key=os.getenv("OPENAI_API_KEY", "api_key"),
+        default_headers={
+            "Authorization": f"Basic {encoded_credentials}"
+        },
+        http_client=http_client
+    )
+
+    return client
+
+@router.post("/chat-casual/mensaje")
+async def enviar_mensaje(request: MensajeRequest):
     try:
-        service = ChatCasualService()
+        client = get_openai_client()
 
-        # Convertir historial a formato dict
-        historial = [
-            {"role": msg.role, "content": msg.content}
-            for msg in request.historial
+        messages = [
+            {"role": "system", "content": "Eres Cuali, un asistente educativo amigable para profesores de primaria en Mexico. Ayudas con planeaciones, actividades y recursos educativos de la Nueva Escuela Mexicana. Responde de manera conversacional, amigable y util."}
         ]
 
-        respuesta = service.chat_amigable(
-            mensaje_usuario=request.mensaje,
-            historial=historial
+        for msg in request.historial:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+
+        messages.append({"role": "user", "content": request.mensaje})
+
+        completion = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "openai/gpt-oss-20b"),
+            messages=messages,
+            temperature=0.7,
+            max_tokens=500
         )
 
-        return ChatCasualResponse(respuesta=respuesta)
+        respuesta = completion.choices[0].message.content
 
+        return {
+            "respuesta": respuesta,
+            "mensaje_usuario": request.mensaje
+        }
+
+    except httpx.ReadTimeout:
+        return {
+            "respuesta": "Lo siento, el servidor esta tardando mucho. Intenta de nuevo.",
+            "mensaje_usuario": request.mensaje
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/bienvenida")
-async def obtener_mensaje_bienvenida():
-    """Obtiene el mensaje inicial de Cuali"""
-    service = ChatCasualService()
-    return {"mensaje": service.mensaje_inicial()}
+        print(f"Error en chat: {str(e)}")
+        return {
+            "respuesta": "Hola, soy Cuali. Estoy teniendo problemas de conexion. Como puedo ayudarte?",
+            "mensaje_usuario": request.mensaje
+        }
