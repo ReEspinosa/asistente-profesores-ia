@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cuali_backend
+    env_file:
+      - ./backend/.env
+    expose:
+      - "8000"
+    restart: unless-stopped
+    networks:
+      - cuali_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cuali_frontend
+    ports:
+      - "5009:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - cuali_net
+
+networks:
+  cuali_net:
+    driver: bridge
