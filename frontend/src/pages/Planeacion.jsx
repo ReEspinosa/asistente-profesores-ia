@@ -118,7 +118,16 @@ function Planeacion() {
               </button>
 
               {resultado && (
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg relative">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(resultado)
+                      alert('Planeación copiada')
+                    }}
+                    className="absolute top-2 right-2 bg-brand-blue text-white px-3 py-1 rounded text-sm"
+                  >
+                    Copiar
+                  </button>
                   <pre className="whitespace-pre-wrap text-sm">{resultado}</pre>
                 </div>
               )}

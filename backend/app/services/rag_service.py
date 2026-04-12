@@ -1,38 +1,36 @@
-import chromadb
-from sentence_transformers import SentenceTransformer
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
 import os
-from typing import List, Dict, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
 
+FAISS_DIR = os.getenv("FAISS_DIR", "./data/faiss_index")
+
 class RAGService:
     def __init__(self):
-        self.persist_dir = os.getenv("CHROMA_PERSIST_DIR", "../data/vectordb")
-        os.makedirs(self.persist_dir, exist_ok=True)
-        
-        self.client = chromadb.PersistentClient(path=self.persist_dir)
-        
         print("Cargando modelo de embeddings...")
-        self.embedding_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-        print("Modelo cargado")
-        
-        self.collection = self.client.get_or_create_collection(name="libros_sep")
-        print(f"ChromaDB listo ({self.collection.count()} documentos)")
-    
-    def add_documents(self, texts, metadatas, ids):
-        self.collection.add(documents=texts, metadatas=metadatas, ids=ids)
-        print(f"{len(texts)} documentos agregados")
-    
-    def search(self, query, n_results=5, filter_metadata=None):
-        kwargs = {"query_texts": [query], "n_results": n_results}
-        if filter_metadata:
-            kwargs["where"] = filter_metadata
-        results = self.collection.query(**kwargs)
-        return {"documents": results["documents"][0], "metadatas": results["metadatas"][0]}
-    
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+        )
+        print("Cargando índice FAISS...")
+        self.vectorstore = FAISS.load_local(
+            FAISS_DIR,
+            self.embeddings,
+            allow_dangerous_deserialization=True
+        )
+        print("RAG listo")
+
+    def search(self, query, n_results=3):
+        docs = self.vectorstore.similarity_search(query, k=n_results)
+        return {
+            "documents": [d.page_content for d in docs],
+            "metadatas": [d.metadata for d in docs]
+        }
+
     def count(self):
-        return self.collection.count()
+        return self.vectorstore.index.ntotal
+
 
 rag_service = None
 

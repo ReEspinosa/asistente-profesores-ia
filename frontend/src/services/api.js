@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: '/api'
+    baseURL: '/cuali.ai/api'
 });
 
 export const generarPlanClase = (data) => API.post('/generar-plan-clase', data);

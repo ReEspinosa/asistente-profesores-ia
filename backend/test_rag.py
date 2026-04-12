@@ -7,26 +7,20 @@ def test_rag():
     print("Inicializando RAG...")
     rag = get_rag_service()
     
-    print("Agregando documentos de prueba...")
-    textos = [
-        "Las fracciones representan partes de un todo. El numerador indica cuantas partes tomamos.",
-        "Para sumar fracciones con el mismo denominador, sumamos los numeradores.",
-        "La Revolucion Mexicana inicio en 1910 con el Plan de San Luis."
-    ]
-    metadatos = [
-        {"materia": "matematicas", "tema": "fracciones", "grado": "6to"},
-        {"materia": "matematicas", "tema": "fracciones", "grado": "6to"},
-        {"materia": "historia", "tema": "revolucion", "grado": "6to"}
-    ]
-    ids = ["mate_001", "mate_002", "hist_001"]
+    print(f"Total documentos en índice: {rag.count()}")
     
-    rag.add_documents(textos, metadatos, ids)
-    print(f"Total documentos: {rag.count()}")
-    
-    print("Buscando: Que son las fracciones?")
+    print("\nBuscando: Que son las fracciones?")
     results = rag.search("Que son las fracciones?", n_results=2)
-    print(f"Resultado: {results['documents'][0][:80]}...")
-    print("PRUEBA EXITOSA")
+    for i, doc in enumerate(results['documents']):
+        print(f"\nResultado {i+1}: {doc[:150]}...")
+        print(f"Fuente: {results['metadatas'][i]}")
+    
+    print("\nBuscando: La Revolucion Mexicana")
+    results2 = rag.search("La Revolucion Mexicana", n_results=2)
+    for i, doc in enumerate(results2['documents']):
+        print(f"\nResultado {i+1}: {doc[:150]}...")
+
+    print("\nPRUEBA EXITOSA")
 
 if __name__ == "__main__":
     test_rag()
