@@ -9,7 +9,7 @@ import Diapositivas from './pages/Diapositivas';
 
 function App() {
     return (
-        <BrowserRouter basename="/tuapp">
+        <BrowserRouter basename="/cuali.ai">
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/chat" element={<Chat />} />
